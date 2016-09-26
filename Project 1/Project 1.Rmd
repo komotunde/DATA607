@@ -1,0 +1,65 @@
+---
+title: "Project 1"
+author: "Oluwakemi Omotunde"
+date: "September 21, 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##**INSTRUCTIONS**
+*In this project, you're given a text file with chess tournament results where the information has some structure. Your job is to create a R Markdown file that generates a .CSV file(that could for example be imported into a SQL database) with the following information for all players:*  
+
++ Player's Name
++ Player's State
++ Total Number of Points
++ Player's Pre-Rating
++ Average Pre Chess Rating of Opponents  
+
+###**OUTSIDE WORK** 
+  
+  
+*The first thing I did was create an excel spreadsheet that contained each players info along with their scores for each round. I used an excel workbook because I would be able to make updates in the Excel file and once I save, I can run the code again and it will reflect the updates.*
+
+###**R-STUDIO STEPS**
+
+*NoW, we need to set the libraries that we will be utilizing for this project. I went back and added rJava and xlsx.*
+
+```{r}
+library(plyr)
+library(stringr)
+library(xlsx)
+library(rJava)
+```
+
+*The code below will load our excel file. Next we want to manipulate the file a bit. We will rename the columns first.*
+
+```{r}
+df <- read.xlsx("Project 1.xlsx", 1)
+chess.info <- df
+head(chess.info)
+```
+
+*The columns will be renamed for a neater looking file.*
+
+
+```{r}
+chessinfo.name <-rename(chess.info, c("Player.Name"="Player Name", "Player.State"="State", "Pre.Rating"="Pre-Rating", "Round.1"="Round 1", "Round.2"="Round 2", "Round.3"="Round 3", "Round.4"="Round 4", "Round.5"="Round 5", "Round.5.1"="Round 6", "Round.7"="Round 7", "Total.Points"="Ttl. Pts.", "Ave..Op..Rating"="Ave.Opp.Rating"))
+head(chessinfo.name)
+```
+
+*After renaming, I would like to create a subset that contains just the columns we need for the CSV. We don't need to include each opponent's pre-rating.*
+
+```{r}
+chess.tournament <- chessinfo.name[, c(1,2,3,11,12)]
+head(chess.tournament)
+```
+
+*Finally, to create the .CSV file.*
+```{r}
+write.csv(chess.tournament, file='chess_final.csv')
+```
+
+
+
