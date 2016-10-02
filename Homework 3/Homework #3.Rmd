@@ -1,0 +1,86 @@
+---
+title: 'Homework 3: Tidying and Transforming Data'
+author: "Oluwakemi Omotunde"
+date: "September 30, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###**For this assignment, we are asked to create a .csv file(or MySQL database) describing arrival delays for two airlines across five destinations. We are encouraged to use a "wide" structure. We are then to read the file into R and use tidyr and dplyr to tidy and transform the data. Lastly, we should perform analysis to compare the arrival delays for the two airlines.**
+
+####*Step 1: We will load the our required libraries, then load the .csv file that we created using Excel and save as data frame. I'll then do some work on tidying/reshaping the data.*
+
+```{r load_file, eval=TRUE}
+require(tidyr)
+require(dplyr)
+require(ggplot2)
+flight.chart <- read.csv('https://raw.githubusercontent.com/komotunde/DATA607/master/Homework%203/flightchart.csv', header = TRUE, na.strings = "")
+flight.chart <- data.frame(flight.chart)
+flight.chart
+```
+
+####*My first task is to rename the columns, and fill in the NA's with the Airline that's above it.*
+
+```{r rename, eval=TRUE}
+require(zoo)
+colnames(flight.chart) <- c("Airline", "Status", "LA", "PHO", "San Diego", "San Fran.", "SEA")
+flight.chart <- na.locf(flight.chart) #this is the only line that will require zoo.
+flight.chart
+```
+
+###*Next is to reshape the data. I would like to have all the destinations(column 3-7) in a column and add an AMOUNT column for the number of times the flight was on time and delayed.*
+
+```{r reshape, eval=TRUE}
+flight.chart <- gather(flight.chart, "Destination", "Amount", 3:7 )
+colnames(flight.chart) <- c("Airline", "Status", "Destination", "Amount")
+flight.chart <-dplyr::arrange(flight.chart, Airline)
+flight.chart
+```
+
+####*I want to create an on time and delayed column with appropriate counts in each column.*  
+
+```{r spread, eval=TRUE}
+flight.chart <- tidyr::spread(flight.chart, Status, Amount)
+colnames(flight.chart) <- c("Airline", "Destination","Delayed","OnTime", "Unknown")
+flight.chart   
+# I noticed that my result was split up so I did the following to fix it.
+flight.chart$OnTime <- c(497, 221, 212, 503, 1841, 694, 4840, 383, 320, 201)
+flight.chart
+flight.chart$Unknown <- NULL
+flight.chart
+
+```
+
+####*Step 2: We will now perform some analysis on the data. My main goal is to figure out which airline is more on time overall.*
+####*I'll need to ensure that my Delayed and On Time columns are numeric so I can do calculations on them*
+
+```{r as numeric, eval=TRUE}
+flight.chart$Delayed <- as.numeric(as.character((flight.chart$Delayed)))
+flight.chart$OnTime <- as.numeric(as.character(flight.chart$OnTime))
+flight.chart <- tbl_df(flight.chart)  #This was more so to confirm that those two columns were converted to numeric.
+flight.chart
+```  
+
+####*I wanted to create a column that would show the ratio of delays vs. on time for each trip. Just from skimming the latest output, we see that the Alaska flight to Phoenix had the lowest rate of delays, while the AM West flight to San Fransico had the highest delay rate.*  
+
+```{r ratio, eval=TRUE}
+flight.chart <- mutate(flight.chart, Ratio = (Delayed /(OnTime + Delayed)))
+flight.chart <- arrange(flight.chart, desc(Ratio))
+flight.chart
+```
+
+####*In order to get a better view of which airline has more delays, I want to produce a grouped bar graph. I chose the destination to be my x-axis, and for my y-axis, I went with the delay ratio (delays/(delays+ontime)
+  
+```{r bar plot, eval=TRUE}
+ggplot(flight.chart,aes(x=Destination, y=Ratio, fill=factor(Airline))) +
+  geom_bar(stat="identity",position="dodge") +
+  scale_fill_brewer(palette = "Set1", name="Airline", breaks =c("ALASKA", "AM WEST"), labels=c("Alaska", "AM WEST")) +
+  xlab("Destination") +
+  ylab("Delayed Ratio")  
+# from: http://stackoverflow.com/questions/17721126/simplest-way-to-do-grouped-barplot
+```
+
+####*From this, we can easily see that overall, AM WEST has more delays than ALASKA. This is shown by every destination having a higher delay rate for AM wEST THAN Alaska. 
