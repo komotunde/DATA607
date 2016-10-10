@@ -1,0 +1,94 @@
+---
+title: 'Project #1 Re-Do'
+author: "Oluwakemi Omotunde"
+date: "October 7, 2016"
+output: html_document
+---
+
+#Introduction  
+
+####After submitting Project 1, I was informed that my submission relied too heavily on Excel due to the fact that I completed the calculations in Excel. Fortunately I was given an opportunity to re-do Project 1 after getting the chance to take a look at other students' completed work.  
+
+#####For this project, we are given a text file with chess tournament results where the information has some structure. We are responsible for creating an R Markdown file that generates a .csv with the following information for all the players:  
+  + Player's Name
+  + Player's State
+  + Total Number of Points
+  + Player's Pre-Rating
+  + Average Pre-Chess Rating of Opponents  
+  
+#####We need to calculate the Average Pre Chess Rating of Opponents by adding the pre-rating of each opponent and dividing it by the number of matches played. 
+
+#####Load libraries that are required:
++ 'stringr': we will be using the 'stringr' package for manipulating the data
+
+```{r}
+library(stringr)
+```
+
+#####Read in the text file:
+
+``` {r read_in_file}
+chessinfo <- readLines('chessinfo.txt', warn = FALSE)  
+#I get a warning message when this line runs so I added the warn component to eliminate the warning. 
+head(chessinfo)
+```
+
+#####Once the file has been loaded, we will start manipulating our data by extracting all the pertinent information such as player's names, state and opponent information using str_extract_all().
+
+```{r}
+chessinfo <- chessinfo[-c(1:4)]
+l <- length(chessinfo)
+row.one <- as.factor(chessinfo[seq(1,l,3)])
+#we have to create a subset that contains the names
+
+head(row.one)
+row.two <- as.factor(chessinfo[seq(2,l,3)])   
+#this will contain all the alternate row information, basically just dividing up by every other row
+
+head(row.two)
+player.name <- str_trim(str_extract(row.one, "(\\w+\\s){2,3}"))  
+#this will extract all words with 2 or more letters, with a space and up to 3 words and then it str_trim will trim down to a new string.
+
+head(player.name)
+scores <- as.double(unlist(str_extract_all(row.one, "[:digit:][.][:digit:]")))  
+#this will extract all numbers in the format x.x and sets them as doubles 
+
+head(scores)
+opponent <- str_extract_all(row.one, "[:digit:]+?\\|") #this is extract all digits followed by |
+opponent <- str_extract_all(opponent, "\\d+")
+head(opponent)
+states <- str_extract(row.two, "\\w+")
+head(states)
+pre.rating <- str_extract(row.two, "[^[:digit:]][:digit:]{1,4}[^[:digit:]]")
+pre.rating <- str_extract(pre.rating, "\\d+")
+#I initially tried code that would extract all four digit numbers with spaces before and after but that didn't take into account elements such as 955P11. This approach worked much better
+
+head(pre.rating)
+```
+
+#####Now that we have the names, states, scores, and pre-rating extracted, we need to calculated the average opponent pre-rating. We will use a loop to do this. 
+
+```{r}
+average.preRating <- 0
+
+for (i in 1:length(player.name)){
+  average.preRating[i] <- round(mean(as.numeric(pre.rating[as.numeric(unlist(opponent[i]))]), na.rm = TRUE, digits = 0))
+}
+head(average.preRating)
+```
+
+#####Finally, I will combine all the parts into a data frame, rename the columns and convert to a table.
+
+```{r data frame}
+chess.output <- data.frame(player.name, states, scores, pre.rating, average.preRating)
+names(chess.output) <- c("Player's Name","State", "Score", "Pre Rating","Ave.Opp.Pre Rating")
+chess.output  
+knitr::kable(chess.output)
+```
+
+#####Now that my data our data is neat and contains our necessary information, we can write a .csv file. 
+
+```{r}
+write.csv(chess.output, file = "chess_output.csv")
+```
+
