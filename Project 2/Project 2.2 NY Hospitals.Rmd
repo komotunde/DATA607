@@ -1,0 +1,142 @@
+---
+title: "Project 2.2"
+author: "Oluwakemi Omotunde"
+date: "October 09, 2016"
+output: html_document
+---
+``` {r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+```
+
+##**Task**  
+
+####*We are to choose any three of the "wide" datasets identified in the Week 5 Discussion items and for each:*
+
++ *Create a .CSV file that includes all of the information included in the dataset. We're encouraged to use a "wide" stucture similar to how th information appears in the discussion item, so we can practice tidying and transformations.*
++ *Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.*
++ *Perform the analysis requested in the discussion item.*
++ *Code should be in an R Markdown file, posted to rpubs.com, and should include narrative dscriptions of your dataa clean up work, analysis and conclusions.*
+
+##**Introduction**  
+
+#####*For my second dataset, I decided to take a look at hospitals in the tri-state area(NY, NJ, CT). I would like to be able to determine which state has the best hospitals overall as well as which hosptals have the top ratings.*
+
+##**Hypothesis**
+
+####*
+
+
+###**Loading data and required libraries**
+
+```{r load_data_libraries}
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+hospital <- read.csv("https://raw.githubusercontent.com/komotunde/DATA607/master/Project%202/Hospital%20Info.csv", colClasses = "character")
+View(hospital)
+```
+
+#####*Since we are only concerned about the hospitals located  in the Tri-State area, our first task is to create a subset that will only include those states. Our main focus is going to be exploring how well a hospital is rated so we will only look at their "achievement points". I would also like to see which category has the highest correlation to HCAHPS scores.*
+
+```{r subset}
+hospital <- as.data.frame(hospital[c(2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 33)])  
+##this will give me the columns pertaining to acheivement points and HCAHPS base and consistency score
+
+is.data.frame(hospital)  
+##i did this just to verify that I have a data frame
+
+colnames(hospital) <- c("Hospital.Name" = "NAME", "State" = "STATE", "Communication.with.Nurses.Achievement.Points" = "COMM.NURSES", "Communication.with.Doctors.Achievement.Points" = "COMM.DOCTORS", "Responsiveness.of.Hospital.Staff.Achievement.Points" = "RESPONSIVENESS", "Pain.Management.Achievement.Points" = "PAIN.MAN", "Communication.about.Medicines.Achievement.Points" = "COMM.MEDS", "Cleanliness.and.Quietness.of.Hospital.Environment.Achievement.Points" = "ENVIRONMENT", "Discharge.Information.Achievement.Points" = "DISCHARGE", "Overall..Rating.of.Hospital.Achievement.Points" = "OVERALL", "HCAHPS.Base.Score" = "HCAHPS.BASE", "HCAHPS.Consistency.Score" = "HCAHPS.CON")
+
+hospital <- subset(hospital, hospital$STATE == 'NY'| hospital$STATE == 'NJ'| hospital$STATE == 'CT')   
+##this will result in the data that only pertains to the tri-state area
+
+head(hospital)
+```
+
+#####*Before I can do anything mathematically, I need to change the columns from character to numeric. We include the parameter na.rm =TRUE to remove the NA's since we don't want them to affect our calculations.*
+
+```{r ratings numeric}
+hospital <- transform(hospital, COMM.NURSES = as.numeric(COMM.NURSES), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, COMM.DOCTORS = as.numeric(COMM.DOCTORS), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, RESPONSIVENESS = as.numeric(RESPONSIVENESS), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, PAIN.MAN = as.numeric(PAIN.MAN), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, COMM.MEDS = as.numeric(COMM.MEDS), na.rm = TRUE, warning = FALSE )
+hospital <- transform(hospital, ENVIRONMENT = as.numeric(ENVIRONMENT), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, DISCHARGE = as.numeric(DISCHARGE), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, OVERALL = as.numeric(OVERALL), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, HCAHPS.BASE = as.numeric(HCAHPS.BASE), na.rm = TRUE, warning = FALSE)
+hospital <- transform(hospital, HCAHPS.CON = as.numeric(HCAHPS.CON), na.rm = TRUE, warning = FALSE)
+View(hospital)
+```
+
+#####*I'll be using the dplyr and plyr packages to change around our data.*
+
+```{r dplyr/plyr work}
+hospital <- mutate(hospital, HCAHPS.TOTAL = HCAHPS.CON + HCAHPS.BASE)
+hospital <- hospital[c(-11, -12, -13)]
+##I was able to combine both scores for HCAHPS for an overall HCAHPS total and removed the columns not needed. 
+hospital <- mutate(hospital, AVE.SCORE = (round(COMM.NURSES + COMM.DOCTORS + RESPONSIVENESS + PAIN.MAN + COMM.MEDS + ENVIRONMENT + DISCHARGE)/7))
+hospital <- arrange(hospital, desc(AVE.SCORE))
+View(hospital)
+##from this we see that the hospital with highest rating is ADIRONDACK MEDICAL CENTER
+
+```
+
+#####*I noticed that there were a few entires where all columns are 0's. I would like to remove those entries.*
+
+```{r remove 0}
+hospital <- dplyr::filter(hospital, AVE.SCORE > 0)
+View(hospital)
+```
+
+#####*I am now at the point whereby my data looks pretty good and I am able to do some analysis and calculations.* 
+
+```{r plot}
+hospital.plot <- ggplot(hospital, aes(AVE.SCORE, HCAHPS.TOTAL)) + geom_point() +geom_smooth(method = lm) 
+##this regression line includes 95% confidence region
+hospital.plot <- hospital.plot + labs(x = "Average Score", y = "HCAHPS SCORE", title = "HCAHPS VS. AVERAGE SCORE")
+hospital.plot
+##I was expecting that more of the values would be clustered around the line, showing a strong correlation between HCAHPS Scores and Average score overall. This is not the case.
+```
+
+#####*Now to see which state has the best ratings overall.*
+
+```{r best state}
+hospital.best <- arrange(hospital, STATE, desc(AVE.SCORE), desc(HCAHPS.TOTAL))
+##I want to sort my data by state, average score and HCAHPS total score
+
+ct.info <- subset(hospital, STATE == "CT")
+ct.average <- mean(ct.info$AVE.SCORE)
+ct.HCAHPS <- mean(ct.info$HCAHPS)
+
+ny.info <- subset(hospital, STATE == "NY")
+ny.average <- mean(ny.info$AVE.SCORE)
+ny.HCAHPS <- mean(ny.info$HCAHPS)
+
+nj.info <- subset(hospital, STATE == "NJ")
+nj.average <- mean(nj.info$AVE.SCORE)
+nj.HCAHPS <- mean(nj.info$HCAHPS)
+
+average <- data.frame(STATES = c("CT", "NJ", "NY"), AVERAGE = c(1.92, 1.20, 1.56 ))
+average
+average.plot <- ggplot(average, aes(x = STATES, y = AVERAGE, fill = STATES)) + geom_bar(stat = "identity") + ggtitle("AVERAGE RATING BY STATE")
+ggplotly(average.plot)
+
+##We see that Connecticut has the highest average rating overall. We will do the  same thing for HCAPH scores. I would guess that CT will also have the highest HCAPH score.
+
+HCAHPS <- data.frame(STATES = c("CT", "NJ", "NY"), SCORE = c(32.25, 29, 30.3))
+HCAHPS
+HCAHPS.plot <- ggplot(HCAHPS, aes(x = STATES, y = SCORE, fill = STATES)) + geom_bar(stat = "identity") + ggtitle("HCAHPS SCORE BY STATE")
+ggplotly(HCAHPS.plot)
+
+##this plot shows us that CT has the highest HCHPS score of 32.25 out of 100. 
+
+```
+
+
+##*Conclusion*
+We can conclude that Connecticut has the best hospitals in the Tri-State area based on both customer feedback as well as HCAHPS ratings. The best hospital in the Tri-State area is ADIRONDACK MEDICAL CENTER with a HCAHPS score of 89 out of 100 and an average rating of 8.86 out of 10. 
+

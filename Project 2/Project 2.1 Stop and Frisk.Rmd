@@ -1,0 +1,150 @@
+---
+title: 'Project #2.1'
+author: "Oluwakemi Omotunde"
+date: "October 9, 2016"
+output: html_document
+---
+##**Task**  
+
+####*We are to choose any three of the "wide" datasets identified in the Week 5 Discussion items and for each:*
+
++ *Create a .CSV file that includes all of the information included in the dataset. We're encouraged to use a "wide" stucture similar to how th information appears in the discussion item, so we can practice tidying and transformations.*
++ *Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.*
++ *Perform the analysis requested in the discussion item.*
++ *Code should be in an R Markdown file, posted to rpubs.com, and should include narrative dscriptions of your dataa clean up work, analysis and conclusions.*
+
+##**Introduction**  
+
+#####*The first data set that I will be working with is the Stop and Frisk dataset from the NYPD website. As a Black New Yorker, I feel that this is something very important and always look forward to an opportunity to learn more about it. The poster of this database had a few ideas on what they wanted to gather insight on and I will be exploring those.*
+
+##**Hypothesis**  
+
+#####*I believe that data will support that black males are stopped and frisked significantly more than any other group. I will also determine the success rate of the stops (success= arrest made, failure= no arrest made).*
+
+###**Loading Data and required libraries.**   
+
+#####*Our first step is to load the .CSV file that we created.*
+
+```{r load_data}
+library(plyr)
+library(stringr)
+library(ggplot2)
+stopandfrisk <- read.csv("https://raw.githubusercontent.com/komotunde/DATA607/master/Project%202/stopandfrisk2015.csv")
+View(stopandfrisk) 
+```
+
+#####*Now that our file is loaded, I want to first create a subset that includes just the columns that I will be working with for this project.*
+
+```{r subset}
+stopandfrisk <- as.data.frame(stopandfrisk[c(2, 4, 10, 15,23, 81, 82, 84)]) #this will give me the columns pertaining to race and age
+is.data.frame(stopandfrisk)  #i did this just to verify that I have a data frame
+head(stopandfrisk)
+```
+
+####*Now that we have the data we want to work with, I'm going to start manipulating the data. The first thing we are going to do is rename the columns of our data frame. We want the names to be more meaningful. Once they have been renamed, I wanted to see how many occasions ended in an arrest. I did so by creatin variables and counting how many times yes and no occurr.*
+
+```{r}
+colnames(stopandfrisk) <- c("pct" = "Precinct", "datestop" = "Date","crimsusp" = "Suspected", "arstmade" = "Arrested","frisked" = "Frisked", "sex" = "Sex", "race" = "Race", "age" = "Age")
+head(stopandfrisk)
+
+arrests <- stopandfrisk[, "Arrested"]
+arrest.yes <- arrests == 'Y'
+arrest.no <- arrests == 'N'
+sum(arrest.yes)  #this gives us the number of incidents where Y was in the Arrested column, giving us the number of those arrested
+sum(arrest.no)  #this gives us the number of incidents where N is in the Arrested column, giving us the number of those not arrested
+rate.success <- 3968/18595
+rate.success
+
+#of the 22563 incidents, we had 18595 non-arrests and 3968 arrests, a 'success' rate of 21%. This seems like it may not be effective 
+```
+
+#####*I want to do the same from above for the number of incidents where frisked occurred and compare to number of arrests*
+
+```{r}
+frisks <- stopandfrisk[, "Frisked"]
+frisk.yes <- frisks == 'Y'
+frisk.no <- frisks == 'N'
+sum(frisk.yes)  #this gives us the number of incidents where Y was in the Frisked column, meaning that the individual stopped was frisked
+sum(frisk.no)  #this gives us the number of incidents where N is in the Frisked column, meaning that the individual stoped was frisked
+
+#we see that 15257 people were frisked, while 7306 were not.
+```
+
+#####*I already have a feeling that the majority of those stopped will be male, but let us check and see. We will also check and see how race plays into these number.*
+
+```{r}
+sex <- stopandfrisk[, "Sex"]
+sex.male <- sex == 'M'
+sex.female <- sex == 'F'
+sum(sex.male)  #this gives us the number of incidents where M was in the Sex column, indicating the number of males that were stopped
+sum(sex.female)  #this gives us the number of incidents where F is in the Sex column, indicating the number of females that were stopped
+
+
+#only 1515 of those stopped were female, while 20853 were male meaning that a staggering 92 percent of those  stopped were male.
+
+20853/22563
+
+black.male <- subset(stopandfrisk, Race == 'B' & Sex == 'M')
+nrow(black.male)
+#We see that the total number of individuals stopped is 11,131, about 50% of the total number of individuals stopped.
+```
+
+#####*I want to see how many of the people were stopped, frisked, and arrested. I'll create a subset of this group and see how many are male and how many are black.*
+
+```{r}
+all.three <- subset(stopandfrisk, Frisked == 'Y' & Arrested == 'Y')
+nrow(all.three) #This shows us that there were 3067 individuals who were stopped, frisked, and arrested 
+```
+
+#####*I would like to see how many of those that were stopped, frisked and arrested were black and compare to the ratio of the total number of blacks who were stopped.*
+
+```{r}
+all.three.race <- subset(stopandfrisk, Frisked == 'Y'& Arrested == 'Y' & Race == 'B')
+nrow(all.three.race) 
+ratio <- nrow(all.three.race)/nrow(all.three)
+ratio #about 50% of those who were stopped, frisked and arrested were Black
+
+black.stopped <- subset(stopandfrisk, Race == 'B')
+nrow(black.stopped) #11950 black individuals were stopped and 10613 other races
+other.races <- nrow(stopandfrisk)-nrow(black.stopped)
+other.races
+
+nrow(black.stopped)/nrow(stopandfrisk) #about 52% of those stopped were black
+2088510/8550405
+``` 
+#####*I would like to now get a better understanding of my data visually. I would like a to visually show the race of those individuals stopped.*
+
+```{r}
+plot.race <- count(stopandfrisk, vars = "Race")
+colnames(plot.race) <- c("Race" = "Race", "freq" = "Total")
+barplot(plot.race$Total, main = "Stop and Frisk: RACE", xlab = "RACE", ylab = "AMOUNT", names.arg = plot.race$Race, col = "blue", border = "dark blue", density = c(10, 90, 10,10,10,10,10,10)) 
+#This gives us the visual representation of how many people from each race is stopped. Black are stopped at a significantlly higher rate.
+```
+
+#####*The last thing I would like to explore is the age of those individuals that are stopped. Since our age column is numeric already, we can easily do this.*
+```{r}
+age.plot <- subset(stopandfrisk, Age > 13 & Age < 100)
+head(age.plot)
+ages <- age.plot$Age
+summary(ages)
+mode <- function(ages) {
+  unique.age <- unique(ages)
+  unique.age[which.max(tabulate(match(ages, unique.age)))]
+}  #from: https://www.tutorialspoint.com/r/r_mean_median_mode.htm
+mode(ages)
+
+#the average of those stopped is approximately 29, median age is 24 and mode is 20
+```
+
+#####*To show this visually:
+
+```{r}
+hist(age.plot$Age, main = "Stop and Frisk: AGE", xlab = "AGE", col = "blue", xlim = c(10,75), breaks = 20)
+
+```
+
+###**Conclusion**
+
+#####*The population of blacks in NYC was 2,088,510	as of July 2015. The total populaion of NY for the same time was 8,550,405. This means that blacks make up approximately 25 percent of the population but make up about 52 percent of those inviduals stopped AND 50 percent of those people were arrested when stopped and frisked. The majority of individuals stopped had ages ranging from 15-25. This is not a normal distribution and I was not expecting it to be a normal distribution since your chances of getting stopped decrease significantly.* 
+
+
