@@ -1,0 +1,205 @@
+---
+title: "Project 2.3"
+author: "Oluwakemi Omotunde"
+date: "October 14, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+
+##**Task**  
+
+####*We are to choose any three of the "wide" datasets identified in the Week 5 Discussion items and for each:*
+
++ *Create a .CSV file that includes all of the information included in the dataset. We're encouraged to use a "wide" stucture similar to how th information appears in the discussion item, so we can practice tidying and transformations.*
++ *Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.*
++ *Perform the analysis requested in the discussion item.*
++ *Code should be in an R Markdown file, posted to rpubs.com, and should include narrative dscriptions of your dataa clean up work, analysis and conclusions.*
+
+##**Introduction**  
+
+#####*For my third dataset, I decided to take a look at what providers charge for services all over the United States. We want to know which region on the US has the highest Average Covered Charges, Total Payments, and most importantly, Medicare Payments.*
+
+##**Hypothesis**
+
+#####*I believe that we will find that charges are generally lower for the midwest in all areas.*
+
+###**Loading Data and required libraries.**   
+
+#####*Our first step is to load the .CSV file that we created.*
+
+```{r load_data_libraries}
+library(plyr)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+medicare.cost <- read.csv("https://raw.githubusercontent.com/komotunde/DATA607/master/Project%202/Medicare%20Payment%20Information.csv")
+View(medicare.cost)
+```
+
+#####*We need to remove the columns that we will not be using for this project.*
+
+```{r column remove}
+medicare.cost <- as.data.frame(medicare.cost[c(1, 3, 6, 9, 10, 11, 12)])
+View(medicare.cost)
+
+##The names of our columns are already pretty good/straight forward so we don't have to worry about renaming them.
+```
+
+#####*Since we want to compare regions to each other, I want to first subset the data by region (Midwest, East Coast, West Coast and the midwest). We will break them down in the follwing manner:  
+
++ *West Coast: Alaska, Arizona, California, Colorado, Hawaii, Idaho, Montana, Nevada, New Mexico, Oregon, Utah, Washington, Wyoming*  
+
++ *Mid-West: Illinois, Indiana, Iowa, Kansas, Michigan, Minnesota, Missori, Nebraska, North Dakota, Ohio, midwest Dakota, Wisconsin*    
+
++ *South: Alabama, Arkansas, Delaware, Georgia, Florida, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, Oklahoma, midwest Carolina, Tennessee, Texas, Washington DC, West Virginia*    
+
++ *East Coast: Connecticut, Maine, Massachusetts, Pennsylvania, Rhode Island, New Hampshire, New Jersey, New York  Vermont*
+
+#####*I need to transfrom the columns pertaining to cost into numeric columns.*
+
+```{r as numeric}
+medicare.cost <- transform(medicare.cost, Average.Covered.Charges = as.numeric(Average.Covered.Charges))
+medicare.cost <- transform(medicare.cost, Average.Total.Payments = as.numeric(Average.Total.Payments))
+medicare.cost <- transform(medicare.cost, Average.Medicare.Payments = as.numeric(Average.Medicare.Payments))
+View(medicare.cost)
+
+##Transform to numeric so we can do calculations
+```
+
+#####*Subsetting by region*
+
+```{r subset region_west}
+medicare.west <- as.data.frame(subset(medicare.cost, medicare.cost$Provider.State == 'WA'| medicare.cost$Provider.State == 'OR'| medicare.cost$Provider.State == 'CA'| medicare.cost$Provider.State == 'ID'| medicare.cost$Provider.State == 'NV'| medicare.cost$Provider.State == 'AZ'| medicare.cost$Provider.State == 'MT'| medicare.cost$Provider.State == 'WY'| medicare.cost$Provider.State == 'UT'| medicare.cost$Provider.State == 'CO'| medicare.cost$Provider.State == 'NM'| medicare.cost$Provider.State == 'AK'| medicare.cost$Provider.State == 'HI'))  
+
+medicare.west <- dplyr::arrange(medicare.west, Provider.State)
+View(medicare.west)
+
+#putting the west coast states in this subset and arranging by state
+```
+
+```{r subset region_east}
+medicare.east <- as.data.frame(subset(medicare.cost, medicare.cost$Provider.State == 'PA'| medicare.cost$Provider.State == 'MA'| medicare.cost$Provider.State == 'ME'| medicare.cost$Provider.State == 'NH'| medicare.cost$Provider.State == 'NY'| medicare.cost$Provider.State == 'VT'| medicare.cost$Provider.State == 'CT'| medicare.cost$Provider.State == 'RI'| medicare.cost$Provider.State == 'NJ'))
+
+medicare.east <- dplyr::arrange(medicare.east, Provider.State)
+View(medicare.east)
+
+##putting the east coast statess in the subset and arranging by state.
+```
+
+```{r subset region_south}
+medicare.south <- as.data.frame(subset(medicare.cost, medicare.cost$Provider.State == 'MD'| medicare.cost$Provider.State == 'WV'| medicare.cost$Provider.State == 'VA'| medicare.cost$Provider.State == 'DE'| medicare.cost$Provider.State == 'DC'| medicare.cost$Provider.State == 'KY'| medicare.cost$Provider.State == 'TN'| medicare.cost$Provider.State == 'NC'| medicare.cost$Provider.State == 'SC'| medicare.cost$Provider.State == 'GA'| medicare.cost$Provider.State == 'AL'| medicare.cost$Provider.State == 'TN'| medicare.cost$Provider.State == 'MS'| medicare.cost$Provider.State == 'FL'| medicare.cost$Provider.State == 'AR'| medicare.cost$Provider.State == 'OK'| medicare.cost$Provider.State == 'TX'| medicare.cost$Provider.State == 'LA'))  
+
+medicare.south <- dplyr::arrange(medicare.south, Provider.State)
+View(medicare.south)
+##putting the southern states in the subset and arranging by state.
+```
+
+```{r subset region_midwest}
+medicare.midwest <- as.data.frame(subset(medicare.cost, medicare.cost$Provider.State == 'ND'| medicare.cost$Provider.State == 'SD'| medicare.cost$Provider.State == 'NE'| medicare.cost$Provider.State == 'KS'| medicare.cost$Provider.State == 'MN'| medicare.cost$Provider.State == 'IA'| medicare.cost$Provider.State == 'MO'| medicare.cost$Provider.State == 'WI'| medicare.cost$Provider.State == 'IL'| medicare.cost$Provider.State == 'MI'| medicare.cost$Provider.State == 'IN'| medicare.cost$Provider.State == 'OH'))
+
+medicare.midwest <- dplyr::arrange(medicare.midwest, Provider.State)
+View(medicare.midwest)
+
+##putting the midwesternvstatess in the subset and arranging by state.
+```
+
+
+#####*Now that we have our data subset, we can begin to work with it.*
+
+```{r group_average_covered}
+avecovered.west <- mean(medicare.west$Average.Covered.Charges)
+avecovered.west  ##average covered cost in west
+
+avecovered.east <- mean(medicare.east$Average.Covered.Charges)
+avecovered.east  ##average covered cost in east
+
+avecovered.midwest <- mean(medicare.midwest$Average.Covered.Charges)
+avecovered.midwest  ##average covered cost in midwest
+
+avecovered.south <- mean(medicare.midwest$Average.Covered.Charges)
+avecovered.south  ##average covered cost in south
+
+##finding the average covered cost each region
+```
+
+
+```{r group_average_totpaymts}
+avetotpaymts.west <- mean(medicare.west$Average.Total.Payments)
+avetotpaymts.west  ##average total payments in west coast
+
+avetotpaymts.east <- mean(medicare.east$Average.Total.Payments)
+avetotpaymts.east  ##average total payments in east coast
+
+avetotpaymts.midwest <- mean(medicare.midwest$Average.Total.Payments)
+avetotpaymts.midwest  ##average total payments in midwest 
+
+avetotpaymts.south <- mean(medicare.south$Average.Total.Payments)
+avetotpaymts.south  ##average total payments in south
+
+##finding the average total payments for each region
+```
+
+
+```{r group_average_medicarepymts}
+
+avemedicarepymts.west <- mean(medicare.west$Average.Medicare.Payments)
+avemedicarepymts.west ##average medicare payments in west coast
+
+avemedicarepymts.east <- mean(medicare.east$Average.Medicare.Payments)
+avemedicarepymts.east  ##average medicare payments in east coast
+
+avemedicarepymts.midwest <- mean(medicare.midwest$Average.Medicare.Payments)
+avemedicarepymts.midwest  ##average medicare payments in the midwest
+
+avemedicarepymts.south <- mean(medicare.south$Average.Medicare.Payments)
+avemedicarepymts.south  ##average medicare payments in the south
+
+##finding the average medicare payment for each region
+
+```
+
+#####*Now to create a data frame with thes calculations so we can plot*
+
+```{r create dataframe}
+Average.Covered <-c(avecovered.west, avecovered.east, avecovered.south, avecovered.midwest)
+Average.Total <- c(avetotpaymts.west, avetotpaymts.east, avetotpaymts.south, avetotpaymts.midwest)
+Average.Medicare <- c(avemedicarepymts.west, avemedicarepymts.east, avemedicarepymts.south, avemedicarepymts.midwest)
+all.average <- data.frame(Average.Covered, Average.Total, Average.Medicare)
+rownames(all.average) <- c("West", "East", "South", "Midwest")
+all.average
+
+##putting all the averages into a dataframe
+```
+
+#####*Now to plot*
+
+```{r plot}
+plot_ly(all.average, x = c("West","East", "South", "Midwest" ), y = Average.Covered, type = 'bar', name = 'Average Covered Cost', marker = list(color = 'rgb(49,130,189)')) %>%
+    add_trace(y = Average.Total, name = 'Average Total', marker = list(color = 'rgb(204,204,204)')) %>%
+   add_trace(y = Average.Medicare, name = 'Average Medicare',  marker = list(color = 'rgba(55, 128, 191, 0.7)')) %>%
+  layout(yaxis = list(title = 'Amount in Dollars'), barmode = 'group')
+
+##generating a bar plot to show each regions average 
+```
+
+max(Average.Covered)
+##*Conclusion*
+
+#####*We an conclude that for average covered cost, the west coast comes in with the highest at $89,591.14. Average Total cost goes to the east coast at $75,378.06 as did the average medicare payments at $76,364.67.In terms of medicare payments, we can safely say that  the east coast, on average, make the highest payments. One could go further and look at what percentage of the total cost is covered by medicare to see which region has the highest medicare payment rate.I actually went ahead and did those calculations and found the the midwest has the highest rate of medicare payment. So even though the east coast has the highest average medicare payment, midwestern states experience a higher rate of their payments from medicare.*
+
+```{r medicare payment rate}
+east.rate <- avetotpaymts.east/avemedicarepymts.east
+west.rate <- avetotpaymts.west/avemedicarepymts.west
+south.rate <- avetotpaymts.south/avemedicarepymts.south
+midwest.rate <- avetotpaymts.midwest/avemedicarepymts.midwest
+east.rate  ##ratio of how much of total payment is from medicare in the east
+west.rate  ##ratio of how much of total payment is from medicare in the west
+south.rate  ##ratio of how much of total payment is from medicare in the south
+midwest.rate  ##ratio of how much of total payment is from medicare in the midwest
+
+```
+
