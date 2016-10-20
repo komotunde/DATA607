@@ -1,0 +1,61 @@
+---
+title: "Homework 4"
+author: "Oluwakemi Omotunde"
+date: "October 19, 2016"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##**TASK**  
++ *For this assignment, we are asked to pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, author and two or three other attributes that you find interesting.*    
++ *Take the information that you've selected about these three books and separately create three files which store the book's information in the HTML(using an html table), XML, JSON formats(e.g "books.html", books.xml, books.json) by hand.*    
++ *Write R code using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?*  
+
+##**Creating Files**
+
+#####*I am an avid Romance and Mystery reader, hence why I chose two Romance novels and a Mystery. I included the title, author, length, year published, and Amazon rating. Since one of the books had to have two authors, I decided the latest James Patterson book that is a part of a series that he co-authors with Michael Ledwidge. I was appreciative of http://www.w3schools.com/xml/ as well as a few other sites that helped with creating the files. I found the HTML to be the most straight forward to completeand the JSON file to be the most time consuming.*
+
+##**Loading HTML file**
+
+```{r HTML}
+library(XML)
+library(RCurl)
+books.html <-"https://raw.githubusercontent.com/komotunde/DATA607/master/Homework%204/books.html"
+books.html <- getURL(books.html)
+books.html <- readHTMLTable(books.html, header = TRUE)
+books.html <- as.data.frame(books.html)
+View(books.html)
+```
+
+#####*I noticed immedicately that my column names were preceeded by X3's. Renaming the columns would take care of this.*
+
+```{r rename}
+colnames(books.html) <- c("TITLE", "AUTHOR", "YEAR", "PAGES", "RATING")
+View(books.html)
+```
+
+##*Now for our xml file.*
+```{r XML}
+books.xml<- getURL("https://raw.githubusercontent.com/komotunde/DATA607/master/Homework%204/books.xml", ssl.verifyPeer=FALSE)
+books.xml <- xmlTreeParse(books.xml,useInternal = TRUE)
+books.xml <- xmlToDataFrame(books.xml)
+View(books.xml) 
+
+###I had an issue with loading from a https but I found this work around on: http://stackoverflow.com/questions/23584514/error-xml-content-does-not-seem-to-be-xml-r-3-1-0
+```
+
+#####*This data frame did not result in the same X3's and I don't have to do any edits on the resulting data frame. Finally, we will finish with our JSON file.*
+
+```{r JSON}
+library(rjson)
+books.json <- "https://raw.githubusercontent.com/komotunde/DATA607/master/Homework%204/books.json"
+books.json <- fromJSON(paste(readLines(books.json), collapse=""))
+books.json <- as.data.frame(books.json)
+View(books.json)
+```
+
+#####*This file was the least appealing and would need the most editing to be visually sound.*
