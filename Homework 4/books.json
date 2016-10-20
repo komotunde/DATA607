@@ -1,39 +1,23 @@
 [
-  
 	{
-"TITLE": "SECOND VERSE",
-    
+        "TITLE": "SECOND VERSE",
          "AUTHOR": "EMILY SNOW",
-    
-         "YEAR": 2016,
-    
-         "PAGES": 384,
-    
-         "RATING": 4.5
+         "YEAR": "2016",
+         "PAGES": "384",    
+         "RATING": "4.5"
 },
-
 	 {
-"TITLE": "SECOND VERSE",
-    
-          "AUTHOR": "EMILY SNOW",
-    
-          "YEAR": 2016,
- 
-          "PAGES": 384,
-    
-          "RATING": 4.5
+          "TITLE": "SECOND VERSE",    
+          "AUTHOR": "EMILY SNOW",    
+          "YEAR": "2016", 
+          "PAGES": "427",   
+          "RATING": "4.5"
 },
-
 	{
-"TITLE": "SECOND VERSE",
-    
+         "TITLE": "SECOND VERSE",
          "AUTHOR": "EMILY SNOW",
-    
-         "YEAR": 2016,
-    
-         "PAGES": 384,
-    
-         "RATING": 4.5
+         "YEAR": "2016",
+         "PAGES": "384",
+         "RATING": "4.5"
   }
-
 ]
