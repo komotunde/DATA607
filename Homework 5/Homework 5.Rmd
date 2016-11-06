@@ -1,0 +1,38 @@
+---
+title: "Week 9 Assignment"
+author: "Oluwakemi Omotunde"
+date: "October 30, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+####*For this assignment, we are asked to choose one of the New York Times APIs and construct an interface in R to read in the JSON data, and transform it to an R dataframe. We will first need to sign up for an API key.*
+
+#####*I decided to go with the API key for movies that opened the year my daughter was born.I'll be following the steps outlined in Chapter 9 of **Automated Data Collection with R**.*
+
+#####*We first need to load our libraries and url.*
+```{r libraries_url}
+require(jsonlite) #we will be loading a JSON file from the web
+
+myurl <- "http://api.nytimes.com/svc/movies/v2/reviews/search.json?opening-date=2009-01-01;2009-12-31"
+myapi <- "&api-key=8d153be607144494a2619d9f981f316a"
+movies.09 <- fromJSON(paste0(myurl, myapi))
+movies.09 <- as.data.frame(movies.09)
+View(movies.09)
+#https://cran.r-project.org/web/packages/jsonlite/jsonlite.pdf (pg 4)
+```
+
+#####*I was a little surprised to see that there were only 20 entries (20 movies). I don't know what I was expecting but I 20 seemed rather small for a whole year. I wanted to just see how many movies the year before and after have to comparison.*
+
+```{r 2008}
+myurl.08 <- "http://api.nytimes.com/svc/movies/v2/reviews/search.json?opening-date=2008-01-01;2008-12-31"
+myapi <- "&api-key=8d153be607144494a2619d9f981f316a"
+movies.08 <- fromJSON(paste0(myurl, myapi))
+movies.08 <- as.data.frame(movies.08)
+View(movies.08)
+#after seeing this I noticed the "has more" column which indicates that there were more entries than the 20 shown
+```
+
