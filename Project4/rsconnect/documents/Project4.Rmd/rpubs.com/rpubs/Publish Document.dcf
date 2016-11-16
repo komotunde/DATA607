@@ -1,0 +1,8 @@
+name: Publish Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/227770/0edec01417ce479793abaaf6ed10d13f
+bundleId: https://api.rpubs.com/api/v1/document/227770/0edec01417ce479793abaaf6ed10d13f
+url: http://rpubs.com/komotunde/227770
+when: 1479328448.72075

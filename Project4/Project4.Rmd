@@ -1,0 +1,85 @@
+---
+title: "Project 4"
+author: "Oluwakemi Omotunde"
+date: "November 12, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+####Introduction
+
+######*For Project 4, you should take information from a relational database and migrate it to a NoSQL database of your own choosing. For the relational database, you might use the flights database, the tb database, the "data skills" database your team created for Project 3, or another database of your own choosing or creation. For the NoSQL database, you may use MongoDB, Neo4j (which we introduce in Week 12), or another NoSQL database of your choosing. Your migration process needs to be reproducible.  R code is encouraged, but not required.  You should also briefly describe the advantages and disadvantages of storing the data in a relational database vs. your NoSQL database.*
+
+######I will be using the 'nycflights13' database that was used for previous assignment. My first step is to use the table import wizard to load the flights tables into MySQL. Once completed, I will them export into Mongodb.
+
+```{r libs}
+library(nycflights13)
+```
+
+
+```{r}
+library(RMySQL)
+dbConnect(MySQL(), user="komotunde", password="N!cole09", 
+    dbname="nycflights", host="localhost",client.flag=CLIENT_MULTI_STATEMENTS)
+#connect to MySQL
+```
+
+**I had a very difficult time with this next part. I had initally planned to use the RMongo package as I could not find rmongodb via CRAN. I was lucky to find the following code to load the package. Using RMongo would not have been an issue but I did not find a lot of documentation on usage on it.**
+
+```{r rmongodb}
+library(devtools)
+install_github(repo = "mongosoup/rmongodb") #installs the rmongodb package
+```
+
+**Now to connect to mongo**
+
+```{r mongo connect}
+library(rmongodb)
+mongo <- mongo.create(host = "localhost")
+mongo.is.connected(mongo)
+#connect to Mongo
+
+db.1 <- "test.nycflights"
+newmongo.db1 <- "test.nycflights.airlines"
+mongo.get.database.collections(mongo, db.1)
+#create database and collection names
+```
+
+
+**Now that we are connected to both our database and have our packages, we can start working. I will be working with flights and airlines csv files.**
+
+```{r load}
+library(RCurl)
+airlines <- getURL("https://raw.githubusercontent.com/komotunde/DATA607/master/Project4/airlines.csv")
+airlines <- read.csv(text = airlines)
+head(airlines)
+```
+
+
+```{r convert}
+library(jsonlite)
+airlines1 <- lapply(split(airlines, 1:nrow(airlines)), function(x)mongo.bson.from.JSON(toJSON(x)))
+airlines1[1:3]
+```
+
+**Now to insert our data into Mongo**
+
+```{r insert}
+mongo.insert.batch(mongo, newmongo.db1, airlines1)
+```
+
+**Now to check and see if it loaded**
+
+```{r check}
+mongo.count(mongo, newmongo.db1, query = '{"carrier":"9E"}') 
+#at this point I am not returning any values.
+
+mongo.count(mongo, newmongo.db1, query = '{"name":"Envoy Air"}') 
+
+#neither of these returned anything so I will go back and make some changes.
+```
+
+**Unfortunately, I could get any return when I ran the queries which leads me to believe that my data did not load properly. I tried quite a few different After this assignment, I found that MySQL has a better learning curve. When I first working with MySQL, I was able to find information on how to get started. MongoDB is quite difficult to learn. There were many challenges from even getting the RMongodb package from archives to attempting to get a return when the queries are ran. I do think it's one of those things whereby once you get a hang of it, you'll find it quite useful.**
